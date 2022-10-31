@@ -1,3 +1,4 @@
+# while(TRUE) {
 
 source('functions/get_municipios_eleicoes.R')
 source('functions/get_resultados_municipios.R')
@@ -6,16 +7,15 @@ mun <- get_municipios_eleicoes()
 
 tictoc::tic("resultados 1o turno presidencial")
 
-retorno_presidencial <- 
-  mun %>%
+mun %>%
   select(state,
          cod_mun_tse = cod_tse) %>% 
   mutate(
     cod_cargo = "0001",
-    cod_eleicao = "544"
+    cod_eleicao = "545"
   ) %>% 
   group_split(state) %>% 
-  purrr::map_df(
+  purrr::walk(
     .x = .,
     .f = function(x) {
       
@@ -30,17 +30,31 @@ retorno_presidencial <-
         furrr::future_pmap(x, get_resultados_municipios) %>% 
         bind_rows()
       
-      readr::write_rds(df_ret, paste0("data/presidencial/", state, "_1o_turno.rds"))
+      readr::write_rds(df_ret, paste0("data/presidencial/", state, "_2o_turno.rds"))
       
       tictoc::toc()
       
       future::plan(future::sequential)
       
-      return(df_ret)
+      return(NA)
       
     }  
   )
 
 tictoc::toc()
 
-readr::write_rds(retorno_presidencial, "data/presidencial/1o_turno_retorno_presidencial.rds")
+list.files(
+  path = 'data/presidencial',
+  pattern = '2o_turno.rds',
+  full.names = TRUE,
+  recursive = TRUE
+) %>% 
+  purrr::map_df(
+    readr::read_rds
+  ) %>% 
+  readr::write_rds(
+    'data/presidencial/2o_turno_retorno_presidencial.rds'
+  )
+
+
+# }
